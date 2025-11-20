@@ -1,0 +1,199 @@
+1. Dívida de Definição de Interface e Dados
+
+
+Descrição para Modeladores
+
+	•	Nome da Dívida: Dados e Mensagens Não Especificadas (ou "Caixas Vazias")
+	•	O que é? Esta dívida ocorre quando o modelo mostra o fluxo de informações, mas não define o que é essa informação. É a prática de desenhar Fluxos de Mensagem (Message Flows), Objetos de Dados (Data Objects) ou definir Tarefas de Serviço (Service Tasks) sem especificar o conteúdo ou a estrutura das mensagens e dados envolvidos.
+	•	Por que é um problema? O modelo se torna ambíguo e inútil para fins de integração ou documentação detalhada. As equipes de negócios e tecnologia terão interpretações diferentes sobre "Dados do Cliente" ou "Mensagem de Pedido", levando a retrabalho, reuniões desnecessárias e falhas de comunicação com parceiros (outros Pools).
+	•	Como Identificar (Visualmente):
+	        •	Fluxos de Mensagem (linhas tracejadas) entre Pools que não têm um ícone de Mensagem (envelope) associado a eles.
+	        •	Ícones de Mensagem (tMessage) com nomes genéricos (ex: "Mensagem") ou sem nome.
+	        •	Tarefas de Serviço, Envio ou Recebimento (Service/Send/Receive Tasks) usadas sem Objetos de Dados (Data Objects) conectados a elas para representar suas entradas e saídas.
+	        •	Objetos de Dados com nomes vagos (ex: "Documento") e sem indicação de estado (ex: [Aprovado]).
+	•	Ação Corretiva:
+	       •	Associe um elemento Mensagem (Message) nomeado (ex: "Pedido de Compra") a cada Fluxo de Mensagem.
+	        •	Especifique a estrutura dessa Mensagem criando uma Definição de Item (tItemDefinition).
+	        •	Conecte Objetos de Dados (via Associação de Dados - Data Association) a todas as Tarefas que consomem ou produzem informações.
+	        •	Use Repositórios de Dados (DataStoreReference) para indicar onde as informações são armazenadas (persistem) entre as instâncias do processo.
+
+Descrição Técnica
+
+	•	Elementos XML Alvo: tMessage, tItemDefinition, tDataInput, tDataOutput, tServiceTask, tSendTask, tReceiveTask, tOperation.
+	•	Padrão de Detecção (Lógica):
+		1.	Mensagens Vazias: Localizar elementos tMessage onde o atributo itemRef (que aponta para um tItemDefinition) está ausente, nulo ou aponta para um tItemDefinition genérico.
+		2.	Definições de Item Vazias: Localizar elementos tItemDefinition onde o atributo structureRef está ausente. (Para modelos não-executáveis, structureRef pode ser um tipo de dado simples ou uma referência a um XSD/WSDL importado, mas sua ausência total indica uma dívida).
+		3.	Tarefas de Serviço Desconectadas: Localizar tServiceTask que referencia uma tOperation (via operationRef). Verificar se os tDataInputAssociation e tDataOutputAssociation filhos do tServiceTaskmapeiam corretamente para os tDataInput e tDataOutput (definidos no ioSpecification da tarefa) que correspondem às mensagens de entrada (inMessageRef) e saída (outMessageRef) da tOperation referenciada. A dívida existe se esses mapeamentos estiverem ausentes.
+		4.	Tarefas de Envio/Recebimento Vazias: Localizar tSendTask ou tReceiveTask que referenciam um tMessage(via messageRef), mas não possuem tDataInputAssociation (para SendTask) ou tDataOutputAssociation (para ReceiveTask) para mover os dados do processo para a mensagem (ou vice-versa).
+		•	Exemplo de Padrão (XML):
+		•	Procurar por <bpmn:message id="Msg_1" name="Notificação" /> (Dívida: atributo itemRef ausente).
+		•	Procurar por <bpmn:itemDefinition id="Item_1" /> (Dívida: atributo structureRef ausente).
+		•	Procurar por <bpmn:serviceTask id="Task_1" operationRef="Op_1" /> que não possui <bpmn:dataInputAssociation> ou <bpmn:dataOutputAssociation>, apesar da tOperation 'Op_1' definir mensagens.
+
+
+2. Dívida de Configuração e Ambiente
+
+Descrição para Modeladores
+
+	•	Nome da Dívida: Dívida de Ferramental Não-Conforme (Anti-Padrão "Apenas um Desenho")
+	•	O que é? É o uso de ferramentas de desenho genéricas (como Visio, Draw.io, PowerPoint) para criar diagramas que parecem BPMN, mas não são. Essas ferramentas não geram um arquivo .bpmn (XML) válido e estruturado conforme a especificação da OMG. O resultado é apenas um desenho, não um modelo.
+	•	Por que é um problema? O modelo é um "beco sem saída". Ele não pode ser importado por nenhuma ferramenta profissional de BPM (Bizagi, Camunda, etc.) para análise, documentação ou futura automação. Subprocessos Reutilizáveis (Call Activities) não podem ser realmente reutilizados em outros modelos. Todo o trabalho de modelagem terá que ser refeito do zero em uma ferramenta compatível.
+	•	Como Identificar (Visualmente):
+		•	O sintoma mais óbvio: o arquivo não é um .bpmn ou .xml. Ele é salvo como .vsdx, .drawio, .png, ou .pptx.
+		•	A ferramenta não permite definir propriedades semânticas (ex: isForCompensation, tipo de loop, calledElement de um Call Activity).
+		•	A ferramenta permite desenhar fluxos impossíveis (ex: um Fluxo de Mensagem conectando duas tarefas dentro do mesmo Pool).
+	•	Ação Corretiva:
+		•	Utilize exclusivamente ferramentas de modelagem BPMN que comprovem a conformidade com a especificação 2.0 da OMG (que importam e exportam o XML padrão).
+		•	Migre (recrie) o modelo em uma ferramenta compatível.
+		•	Sempre valide a portabilidade: exporte o XML de sua ferramenta e tente importá-lo em outra ferramenta BPMN padrão para verificar perdas.
+
+Descrição Técnica
+
+	•	Elementos XML Alvo: O documento .bpmn (XML) inteiro, tCallActivity, tProcess, tImport, e elementos BPMNDI.
+	•	Padrão de Detecção (Lógica):
+		1.	Validação de Esquema (Schema): A dívida primária é um XML que falha na validação contra os schemas oficiais do BPMN 2.0 (BPMN20.xsd, BPMNDI.xsd, DC.xsd, DI.xsd).
+		2.	Modelo Semântico vs. Apenas DI (Diagram Interchange): O arquivo XML contém apenas elementos de BPMNDI (layout), sem os elementos semânticos correspondentes (tProcess, tTask, etc.). Ferramentas de desenho simples muitas vezes só exportam a "imagem" (elementos DI) sem o modelo de processo (tProcess) subjacente.
+		3.	Portabilidade de Reutilização Quebrada: Localizar tCallActivity. O seu atributo calledElement deve ser um QName (ex: proc:Processo_Global_123) que referencia um tProcess ou tGlobalTask definido no documento ou em um tImport válido. A dívida existe se calledElement estiver ausente ou apontar para um artefato não-padrão (ex: um link de hipertexto para outra página de desenho).
+	•	Exemplo de Padrão (XML):
+	•	"O arquivo XML falha na validação contra o BPMN20.xsd da OMG."
+	•	"O XML contém <bpmndi:BPMNShape bpmnElement="Task_1" /> mas não há nenhuma definição de <bpmn:task id="Task_1" ... /> dentro de um <bpmn:process>."
+	•	"Procurar por <bpmn:callActivity id="Call_123" /> (Dívida: atributo obrigatório calledElement ausente)."
+	•	"Procurar por <bpmn:callActivity id="Call_456" calledElement="http://drawio.com/page-2/shape-4" />(Dívida: calledElement não é um QName válido referenciando um tProcess ou tGlobalTask)."
+
+
+
+
+
+
+
+3. Dívida de Organização e Atribuição
+
+
+Descrição para Modeladores
+
+	•	Nome da Dívida: Dívida de Responsabilidade Ambígua (Lanes Vagas)
+	•	O que é? É a prática de usar Pools (Participantes) e Lanes (Raias) com nomes genéricos, vagos ou baseados em departamentos (ex: "Financeiro"), em vez de papéis funcionais claros (ex: "Analista Financeiro"). Isso esconde quem é o verdadeiro responsável pela execução das atividades.
+	•	Por que é um problema? O modelo falha em responder à pergunta "Quem faz o quê?". Nomes como "Sistema" ou "Gerência" são ambíguos. "Sistema" pode significar 10 sistemas diferentes. "Gerência" não especifica qual gerente. Isso gera confusão operacional e falta de responsabilização (accountability), tornando o mapa do processo inútil para treinamento ou análise de papéis.
+	•	Como Identificar (Visualmente):
+		•	Lanes com nomes genéricos: "Sistema", "Equipe A", "Gerência", "Outros".
+		•	Lanes nomeadas por departamentos (ex: "Financeiro") que contêm tarefas de diferentes papéis (ex: "Analista Financeiro" e "Diretor Financeiro" misturados na mesma raia).
+		•	Tarefas que claramente são de responsabilidade de um papel, mas estão posicionadas na Lane errada.
+	•	Ação Corretiva:
+	•	Refatore os nomes das Lanes para representar papéis funcionais específicos (ex: "Analista de Crédito", "Sistema de Faturamento", "Gerente de Contas").
+		•	Se múltiplos papéis atuam dentro de um departamento, use Lanes Aninhadas (Nested Lanes): uma Lane externa para o "Departamento Financeiro" e Lanes internas para "Contas a Pagar" e "Tesouraria".
+		•	O nome do Pool deve representar a entidade/organização (ex: "Cliente", "Empresa de Logística"), enquanto as Lanes representam os papéis/sistemas dentro dessa organização.
+
+Descrição Técnica
+
+	•	Elementos XML Alvo: tLane, tPool, tParticipant, tResourceRole, tPerformer.
+	•	Padrão de Detecção (Lógica):
+		1.	Nomenclatura Vaga (Análise de Texto): Analisar o atributo name de todos os elementos tLane e tParticipant(Pools). Sinalizar nomes que pertencem a uma lista de termos genéricos (ex: "Sistema", "Equipe", "Gestão", "Gerência", "Analista", "Outros", "Departamento", "Área").
+		2.	Falta de Papéis (ResourceRole): Embora o comentário restrinja a execução, a definição de papéis ainda é parte da modelagem (documentação). Verificar tProcess que contenham tLane mas não contenham definições de tResource ou tResourceRole (Performer, PotentialOwner) para dar semântica a essas Lanes. (Nota: A especificação não força uma Lane a se ligar a um ResourceRole, mas a ausência de ambos é um indicador de dívida de documentação).
+	•	Exemplo de Padrão (XML):
+		•	Procurar por <bpmn:lane id="Lane_1" name="Sistema"> ... </bpmn:lane>.
+		•	Procurar por <bpmn:participant id="Part_2" name="Equipe de Vendas" /> (Ambíguo. É o 'Vendedor' ou o 'Gerente de Vendas'?).
+		•	Procurar por <bpmn:process ...> <bpmn:laneSet> <bpmn:lane name="Analista" /> <bpmn:lane name="Gerente" /> </bpmn:laneSet> </bpmn:process>
+
+
+4. Dívida de Comportamento de Atividade
+
+Descrição para Modeladores
+
+	•	Nome da Dívida: Dívida de Semântica Incorreta de Elementos
+	•	O que é? É usar um elemento BPMN (um ícone) que não representa corretamente a lógica de negócio pretendida. É o equivalente a usar a palavra errada em uma frase; o fluxo pode parecer correto, mas o significado da etapa está errado, levando a mal-entendidos.
+	•	Por que é um problema? O diagrama se torna enganoso. Causa confusão fundamental sobre como o trabalho é feito (é manual ou automático?), para quem a comunicação é enviada (um alvo específico ou um "aviso geral"?), ou quando uma atividade deve parar (interrupção ou não?).
+	•	Como Identificar (Visualmente):
+		•	Tarefa Manual vs. Usuário: Usar uma Tarefa Manual (Manual Task - ícone de mão) para uma tarefa feita dentro de um software (ex: "Aprovar pedido no sistema"). O correto seria uma Tarefa de Usuário (User Task - ícone de pessoa).
+		•	Sinal vs. Mensagem: Usar um Evento de Sinal (Signal Event - triângulo) para uma comunicação entre dois Pools (parceiros). O correto é um Evento de Mensagem (Message Event - envelope), que mostra um remetente e um destinatário claros. Sinal é um "broadcast" (como um alarme de incêndio), Mensagem é uma "carta" (com endereço).
+		•	Evento de Borda (Boundary Event): Usar uma linha sólida (interruptivo) quando a atividade principal deveria continuar (ex: um timer para "Enviar Lembrete" não deve cancelar a "Tarefa Principal"). O correto seria uma linha tracejada (não-interruptivo).
+		•	Loop Paralelo vs. Sequencial: Usar o marcador de Multi-Instância Paralelo (três linhas verticais |||) quando as atividades devem ocorrer uma após a outra. O correto seria o Sequencial (três linhas horizontais ≡).
+	•	Ação Corretiva:
+		•	Revise o significado de cada ícone. Manual Task (mão) significa "sem sistema". User Task (pessoa) significa "humano + sistema".
+		•	Ao comunicar entre Pools, sempre use Eventos de Mensagem (envelope) ou Tarefas de Envio/Recebimento.
+		•	Verifique se os Eventos de Borda (anexados a tarefas) devem parar a tarefa (linha sólida) ou não (linha tracejada).
+		•	Verifique os marcadores de loop (||| vs. ≡).
+
+Descrição Técnica
+
+	•	Elementos XML Alvo: tManualTask, tUserTask, tSignalEventDefinition, tMessageEventDefinition, tBoundaryEvent, tMultiInstanceLoopCharacteristics.
+	•	Padrão de Detecção (Lógica):
+	1.	Confusão de Sinal/Mensagem: Localizar tSignalEventDefinition associado a um tThrowEvent ou tCatchEvent que está conectado (logicamente, via processo) a um tMessageFlow que cruza a fronteira de um tPool. Isso é uma contradição semântica; tSignalEventDefinition é para broadcast, tMessageFlow é para comunicação 1:1.
+	2.	Confusão de Tarefa Manual/Usuário: Localizar tManualTask que possui tDataInputAssociation ou tDataOutputAssociation complexas. A presença de associações de dados formais sugere fortemente interação com dados de sistema, indicando que deveria ser tUserTask.
+	3.	Semântica de Interrupção (Boundary Event): Localizar tBoundaryEvent (ex: um tTimerEventDefinition) onde o atributo cancelActivity está true (padrão), mas o nome da tarefa/evento (ex: "Enviar Lembrete") sugere uma lógica não-interruptiva. (Detecção difícil, baseada em heurística de texto).
+	4.	Semântica de Loop (Multi-Instância): Localizar tMultiInstanceLoopCharacteristics onde o atributo isSequential (ex: false para paralelo) contradiz o nome da tarefa (ex: "Revisar itens em ordem"). (Detecção difícil, baseada em heurística de texto).
+	•	Exemplo de Padrão (XML):
+	•	"Procurar por <bpmn:intermediateThrowEvent> <bpmn:signalEventDefinition ... /> </bpmn:intermediateThrowEvent> onde o tProcess pai participa de uma tCollaboration e está ligado a um tMessageFlow. Isso é um forte indicador de uso incorreto (deveria ser tMessageEventDefinition)."
+	•	"Identificar <bpmn:manualTask id="Task_1" name="Aprovar Pedido no SAP" />. O nome ("SAP") sugere interação com sistema, indicando que deveria ser tUserTask."
+	•	"Identificar <bpmn:boundaryEvent id="Event_1" cancelActivity="true" ...> <bpmn:timerEventDefinition ... /> </bpmn:boundaryEvent> associado a uma tarefa cujo nome é "Enviar Lembrete". A dívida é o cancelActivity ser true."
+
+
+5. Dívida de Granularidade e Abstração
+
+Descrição para Modeladores
+
+	•	Nome da Dívida: Dívida de Nível de Detalhe Inadequado (Poluição Visual vs. Modelo Vazio)
+	•	O que é? É a falha em manter um nível de abstração consistente no diagrama. Acontece de duas formas:
+	1.	Excesso de Detalhes (Poluição): Um diagrama de alto nível (estratégico) que está poluído com detalhes de baixo nível (ex: Objetos de Dados, Script Tasks, regras técnicas).
+	2.	Falta de Detalhes (Vazio): Um diagrama que deveria ser operacional, mas usa apenas Tarefas Abstratas (sem ícone) ou Gateways sem nenhuma explicação, não fornecendo valor.
+	•	Por que é um problema? O modelo se torna inútil. Se for muito detalhado, os gestores não conseguem ver o fluxo principal ("perde-se a floresta pelas árvores"). Se for muito vago, as equipes de operação não sabem o que fazer. O modelo não serve nem para estratégia, nem para documentação.
+	•	Como Identificar (Visualmente):
+	•	Mistura de Níveis: Um fluxo principal (ex: 5 tarefas) onde um dos passos é um Subprocesso Expandido(Expanded Sub-Process) gigante com 30 elementos dentro.
+	•	Excesso de Detalhes: O diagrama principal está poluído com muitos Objetos de Dados, Text Annotationstécnicas e ícones de tarefas específicas (Script, Regra de Negócio).
+	•	Falta de Detalhes: Uso de Tarefas Abstratas (caixas brancas sem ícone) para tudo. Gateways Exclusivos(losangos) sem texto nas setas de saída (Sequence Flows) explicando as condições.
+	•	Ação Corretiva:
+	•	Use Subprocessos Colapsados: Mova qualquer sequência lógica de baixo nível (ex: "Tratamento de Exceção", "Coleta de Documentos") para dentro de um Subprocesso Colapsado (Collapsed Sub-Process - ícone de +). Isso limpa o diagrama principal.
+	•	Use Subprocessos Reutilizáveis: Se essa lógica de baixo nível se repete em vários locais, transforme-a em um Processo Global e chame-o usando uma Call Activity (ícone com borda grossa).
+	•	Mantenha diagramas separados para diferentes níveis (Nível 1 Estratégico, Nível 2 Operacional).
+
+Descrição Técnica
+
+	•	Elementos XML Alvo: tSubProcess, tCallActivity, tTask (abstrata), tGateway, tSequenceFlow, e elementos BPMNDI.
+	•	Padrão de Detecção (Lógica):
+	1.	Excesso de Detalhes (Contagem de Elementos): Analisar um tProcess. Se o número de FlowElement(Tarefas, Gateways, Eventos) for muito alto (ex: > 40), sugere-se a refatoração para tSubProcess ou tCallActivity.
+	2.	Mistura de Abstrações (Subprocesso Expandido): Localizar elementos tSubProcess onde o atributo isExpanded (no elemento BPMNShape correspondente no XML de DI) está true. Um tSubProcess expandido que contém muitos FlowElement (ex: > 10) polui o diagrama pai e deveria ser colapsado.
+	3.	Falta de Detalhes (Tarefas Abstratas): Localizar elementos tTask (tarefas que não são de nenhum tipo específico como tUserTask, tServiceTask, etc.). Uma alta contagem de tTask abstratas em um processo que não é de altíssimo nível (ex: que já contém tLane) indica um modelo vago.
+	4.	Falta de Detalhes (Gateways Vazios): Localizar tExclusiveGateway ou tInclusiveGateway (divergentes) onde os tSequenceFlow de saída não possuem o atributo name (para documentar a condição) nem um conditionExpression filho.
+	•	Exemplo de Padrão (XML):
+	•	"Procurar por <bpmn:subProcess id="Sub_1" ... > e no XML de DI (Diagram Interchange), encontrar <bpmndi:BPMNShape bpmnElement="Sub_1" isExpanded="true">. Se o tSubProcess "Sub_1" contiver > 10 flowElement, é uma dívida."
+	•	"Contar o número de <bpmn:task ... /> (tarefas abstratas) em um <bpmn:process>. Um número alto indica baixa granularidade."
+	•	"Identificar <bpmn:exclusiveGateway id="G1" ... > <bpmn:outgoing>Flow_1</bpmn:outgoing> </bpmn:exclusiveGateway> onde <bpmn:sequenceFlow id="Flow_1" /> (Dívida: atributo name ausente e sem conditionExpression)."
+
+
+6. Dívida de Legibilidade e Adoção
+
+Descrição para Modeladores
+
+	•	Nome da Dívida: Dívida de Documentação e Clareza Visual (ou "Modelo Incompreensível")
+	•	O que é? É um modelo que, embora tecnicamente correto, é impossível de ler. O layout é caótico ("diagrama espaguete"), os nomes dos elementos são vagos (ex: "Tarefa 1") e faltam explicações contextuais. O modelo falha em seu principal objetivo: ser um mapa claro do processo para humanos.
+	•	Por que é um problema? Ninguém usa o modelo. As equipes de negócio o ignoram e criam seus próprios "mapas" em planilhas ou documentos de texto (causando Divergência do Processo). Gera incerteza, erros operacionais e frustração, pois o modelo é visto como burocracia inútil e não como uma ferramenta de ajuda.
+	•	Como Identificar (Visualmente):
+	•	Layout Caótico: Fluxos (Sequence Flows) que se cruzam, voltam, ou são longos demais. Elementos desalinhados.
+	•	Nomenclatura Vaga:
+	•	Tarefas: "Processar", "Verificar", "Fazer atividade", "Tsk-01".
+	•	Gateways (Decisões): "Decisão", "Gateway", "GW-03", "Verifica".
+	•	Fluxos de Saída de Gateway: "Caminho 1", "Default", "Fluxo 3".
+	•	Falta de Contexto: Ausência de Anotações de Texto (Text Annotations) para explicar regras de negócio complexas (ex: o que um Gateway Complexo faz). Não usar Grupos (Groups - caixa tracejada) para agrupar visualmente atividades relacionadas.
+	•	Ação Corretiva:
+	•	Layout: Refatore o layout para um fluxo claro (geralmente da esquerda para a direita, cima para baixo). Evite cruzar linhas.
+	•	Nomes de Tarefas: Use o padrão Verbo + Substantivo (ex: "Validar Pedido de Compra").
+	•	Nomes de Gateways: Transforme o Gateway (losango) em uma pergunta clara (ex: "Pedido Aprovado?").
+	•	Nomes de Fluxos: Os Sequence Flows de saída do gateway devem ser as respostas claras (ex: "Sim", "Não", "Aprovado", "Rejeitado").
+	•	Anotar: Adicionar Anotações de Texto (usando Associação - linha pontilhada) para explicar qualquer lógica não-trivial.
+
+Descrição Técnica
+
+	•	Elementos XML Alvo: tTask, tGateway, tSequenceFlow, tTextAnnotation, tGroup, e elementos BPMNDI(BPMNEdge).
+	•	Padrão de Detecção (Lógica):
+	1.	Dívida de Layout (DI): Analisar os waypoint (pontos da linha) dos BPMNEdge (Fluxos). A dívida existe se múltiplos BPMNEdge se cruzam (detecção geométrica complexa) ou se um BPMNEdge tem um número excessivo de waypoint (ex: > 4), indicando roteamento manual ruim.
+	2.	Dívida de Nomenclatura (Análise de Texto):
+	•	Analisar o atributo name de tTask, tGateway, tEvent. Sinalizar nomes que seguem padrões genéricos (ex: "Task", "Gateway", "Evento", ou que correspondem a IDs, ex: "Flow_123").
+	•	Analisar o atributo name de tExclusiveGateway. Sinalizar nomes que não terminam com interrogação (?).
+	•	Analisar os tSequenceFlow de saída de um tExclusiveGateway. Sinalizar se o atributo name estiver ausente ou não pertencer a um conjunto de respostas simples (ex: "Sim", "Não", "Aprovado", "Rejeitado").
+	3.	Falta de Documentação (Contexto):
+	•	Contar o número de tTextAnnotation e tGroup. Um número zero ou muito baixo em um processo complexo (ex: > 15 FlowElement) é um indicador de dívida.
+	•	Verificar elementos complexos (ex: tComplexGateway, tInclusiveGateway) que não têm uma tAssociation de entrada vinda de um tTextAnnotation.
+	•	Exemplo de Padrão (XML):
+	•	Procurar por <bpmn:task id="T1" name="Tarefa 1" />.
+	•	Procurar por <bpmn:exclusiveGateway id="G1" name="Decisão" />.
+	•	"Identificar <bpmn:exclusiveGateway id="G1" ... > <bpmn:outgoing>Flow_1</bpmn:outgoing> </bpmn:exclusiveGateway> onde <bpmn:sequenceFlow id="Flow_1" /> (Dívida: atributo name ausente)."
+	•	"Identificar <bpmn:complexGateway id="G_Comp" /> que não possui um <bpmn:association> de entrada vindo de um <bpmn:textAnnotation>."
