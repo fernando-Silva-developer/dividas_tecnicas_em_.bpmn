@@ -1,0 +1,66 @@
+PROMPT 1 - GERAR PROMPT INICIAL COM IA
+Contexto
+Tenho algumas dívidas técnicas de modelos de processos de negócios (BPMN) que foram abstraídas para esse contexto a partir de dívidas técnicas de outros contextos.
+Comentários da Especialista sobre as Dívidas Técnicas
+Essas dívidas iniciais foram enviadas para uma especialista que fez comentários acerca de cada dívida.
+O Objetivo
+A descrição das dívidas não está necessariamente alinhada com os comentários da especialista e com os modelos de processos de negócios BPMN, por isso, preciso fazer as alterações necessárias na descrição de cada dívida, com base nos comentários da especialista, no contexto de Modelos de Processos de Negócios BPMN e no documento de especificação do BPMN, fornecido pela OMG.
+Dois Tipos de Descrições
+Preciso de descrições para humanos e pessoas que trabalham com modelagem de processos de negócios BPMN, com linguagem clara e alinhada com a linguagem utilizada na modelagem BPMN.
+Além disso, será necessário uma descrição técnica e detalhada com base no documento que descreve o BPMN 2.0 da OMG, com termos utilizados no código XML de um modelo BPMN, para que uma IA possa analisar o código XML do modelo BPMN e identificar as dívidas técnicas. Para isso, posso enviar o documento completo da OMG.
+A Tarefa
+Crie um prompt, com base em tudo que eu escrevi para dívidas técnicas nesse formato abaixo:
+EXEMPLO DE DÍVIDA TÉCNICA, SUA DESCRIÇÃO E COMENTÁRIO DA ESPECIALISTA
+1. Dívida de Definição de Interface e Dados
+Comentário da Especialista: Dívida por não detalhar as mensagens, objetos de entrada e saída.
+Definição Abstrata: O modelo falha em utilizar corretamente padrões externos de definição (como XML Schema ou WSDL) para especificar elementos críticos como Mensagens (Message), Definições de Item (ItemDefinition), ou Entradas/Saídas de Dados (DataInput, DataOutput).
+Como Identificar em um Modelo de Processo (BPMN):
+Definição Técnica Ausente/Incorreta: Falha na especificação de Mensagens (mensagens vazias), Definições de Item, ou elementos de entrada/saída usando padrões externos (XML Schema/WSDL).
+Interfaces Mal Definidas: Um Service Task que referencia uma Operation mal definida, sem definir ter Data Input/Output alinhado à definição da operação.
+Documentação Deficiente: Uso deficiente de Text Annotations ou ausência de descrições textuais adequadas nos elementos.
+Consequências da Dívida: Torna o modelo opaco ou inviável para integração. Resulta em retrabalho para engenharia de interfaces e dificuldades de manutenção futuras, sendo análogo a ter código sem documentação adequada.
+Ação Corretiva:
+Modelagem "Data-Driven": Iniciar a modelagem definindo as ItemDefinitions (estruturas de dados) centrais.
+Criar um repositório ou dicionário de dados do processo.
+Usar DataStoreReference para indicar explicitamente onde os dados persistem.
+
+
+Saída 1:
+Personagem e Contexto
+Você é um especialista sênior em Modelagem de Processos de Negócios (BPMN) e um arquiteto de software com profundo conhecimento da especificação BPMN 2.0 da OMG (Object Management Group) e sua estrutura XML subjacente.
+Objetivo
+Meu objetivo é refinar uma lista de Dívidas Técnicas (DTs) identificadas em modelos BPMN. As descrições atuais dessas dívidas são abstratas (muitas vezes vindas de outros contextos, como código-fonte) e precisam ser traduzidas e alinhadas com os comentários de uma especialista e com a terminologia formal da especificação BPMN 2.0.
+Sua Tarefa
+Para cada Dívida Técnica que eu fornecer abaixo, você deve analisar o material de entrada (Descrição Abstrata, Comentário da Especialista, etc.) e gerar duas novas descrições otimizadas.
+
+SAÍDA REQUERIDA (O QUE VOCÊ DEVE GERAR)
+1. Descrição para Modeladores (Humano-Legível)
+Propósito: Um guia claro e acionável para Analistas de Negócios, Donos de Processo e Modeladores BPMN.
+Formato:
+Nome da Dívida: (Um nome claro e alinhado ao BPMN).
+O que é? (Descrição do problema em linguagem de negócios e BPMN, como "Pools", "Tasks", "Gateways", "Fluxos de Mensagem", etc.).
+Por que é um problema? (As consequências no mundo real, como ambiguidade, dificuldade de automação, retrabalho).
+Como Identificar (Visualmente): (Pistas que um modelador pode ver no diagrama).
+Ação Corretiva: (Como consertar o modelo).
+
+
+2. Descrição Técnica (Máquina-Legível / Focada na IA)
+Propósito: Instruções detalhadas para uma IA ou script analisar o arquivo XML (.bpmn) e detectar a dívida automaticamente.
+Base: Estritamente baseada na especificação BPMN 2.0 da OMG e seu esquema XML.
+Formato:
+Elementos XML Alvo: (Quais tags XML devem ser inspecionadas? Ex: tTask, tServiceTask, tMessageFlow, tItemDefinition).
+Padrão de Detecção (Lógica): (A lógica exata para encontrar a dívida no XML. Use nomes de atributos e elementos da especificação).
+Exemplo de Padrão (XML):
+Exemplo: "Verificar se elementos tMessage possuem o atributo itemRef nulo ou ausente."
+Exemplo: "Identificar elementos tServiceTask que referenciam uma tOperation (via atributo operationRef), mas os tDataInputAssociation ou tDataOutputAssociation filhos não correspondem aos tMessage de entrada/saída definidos na tOperation."
+Exemplo: "Procurar por tProcess que contenham tDataObject mas não possuam nenhum tDataStoreReference para indicar persistência."
+
+
+
+
+
+FORMATO DE ENTRADA (O QUE EU VOU FORNECER)
+Eu fornecerei cada dívida usando a estrutura abaixo. Sua análise deve priorizar o "Comentário da Especialista" como a fonte da verdade para refinar a "Definição Abstrata" original.
+[COLE AQUI A SUA DÍVIDA TÉCNICA, SEGUINDO O FORMATO DO SEU EXEMPLO]
+
+Analise a(s) dívida(s) técnica(s) fornecida(s) abaixo e gere as duas descrições (Humano-Legível e Máquina-Legível) para cada uma.
