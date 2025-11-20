@@ -1,0 +1,117 @@
+PROMPT 2
+Personagem e Contexto
+Você é um especialista sênior em Modelagem de Processos de Negócios (BPMN) e um arquiteto de software com profundo conhecimento da especificação BPMN 2.0 da OMG (Object Management Group) e sua estrutura XML subjacente.
+Objetivo
+Meu objetivo é refinar uma lista de Dívidas Técnicas (DTs) identificadas em modelos BPMN. As descrições atuais dessas dívidas são abstratas (muitas vezes vindas de outros contextos, como código-fonte) e precisam ser traduzidas e alinhadas com os comentários de uma especialista e com a terminologia formal da especificação BPMN 2.0.
+Sua Tarefa
+Para cada Dívida Técnica que eu fornecer abaixo, você deve analisar o material de entrada (Descrição Abstrata, Comentário da Especialista, etc.) e gerar duas novas descrições otimizadas.
+
+SAÍDA REQUERIDA (O QUE VOCÊ DEVE GERAR)
+1. Descrição para Modeladores
+Propósito: Um guia claro e acionável para Analistas de Negócios, Donos de Processo e Modeladores BPMN.
+Formato:
+Nome da Dívida: (Um nome claro e alinhado ao BPMN).
+O que é? (Descrição do problema em linguagem de negócios e BPMN).
+Por que é um problema? (As consequências no mundo real).
+Como Identificar (Visualmente): (Pistas no diagrama).
+Ação Corretiva: (Como consertar o modelo).
+
+
+2. Descrição Técnica
+Propósito: Instruções detalhadas para uma IA ou script analisar o arquivo XML (.bpmn).
+Base: Estritamente baseada na especificação BPMN 2.0 da OMG e seu esquema XML.
+Formato:
+Elementos XML Alvo: (Quais tags XML devem ser inspecionadas?).
+Padrão de Detecção (Lógica): (A lógica exata para encontrar a dívida no XML).
+Exemplo de Padrão (XML): (Exemplos de lógica de detecção).
+
+
+
+Analise a(s) dívida(s) técnica(s) fornecida(s) abaixo e gere as duas descrições acima para cada uma.
+
+{Lista das dívidas técnicas}
+
+
+Saída:
+Aqui está a análise de cada Dívida Técnica, dividida nas duas descrições solicitadas.
+
+1. DÍVIDA DE DEFINIÇÃO DE INTERFACE E DADOS
+Descrição para Modeladores
+Nome da Dívida: Dívida de Especificação de Dados e Mensagens (Contratos Vazios).
+O que é? É a prática de modelar um processo que mostra a troca de informações (Fluxos de Mensagem, Objetos de Dados) sem definir o que essas informações contêm.
+Por que é um problema? O modelo se torna ambíguo e inutilizável para automação, resultando em suposições, retrabalho e falhas de integração.
+Como Identificar (Visualmente):
+Fluxos de Mensagem sem um ícone de Mensagem associado.
+Ícones de Mensagem com nomes genéricos (ex: "Mensagem 1").
+Tarefas de Serviço (Service Task) sem Objetos de Dados associados.
+Uso de Objetos de Dados genéricos sem um Repositório de Dados (DataStoreReference).
+
+
+Ação Corretiva:
+Defina seus Dados: Defina as ItemDefinitions (estruturas de dados) principais do processo.
+Especifique Mensagens: Associe um elemento Mensagem a cada Fluxo de Mensagem.
+Detalhe Tarefas de Serviço: Mapeie explicitamente os DataObjects para as entradas e saídas da tarefa.
+
+
+Descrição Técnica
+Elementos XML Alvo: tMessage, tItemDefinition, tServiceTask, tOperation, tDataInputAssociation, tDataOutputAssociation, tDataObject, tDataStoreReference.
+Padrão de Detecção (Lógica):
+Mensagens Vazias: Procurar por tMessage onde o atributo itemRef está ausente.
+Operações Mal Definidas: Inspecionar tServiceTask e sua tOperation referenciada para verificar se definem inMessageRef e outMessageRef.
+Associações de Dados Faltantes: Para um tServiceTask válido, verificar a ausência de tDataInputAssociation e tDataOutputAssociation.
+Dados Não Persistidos: Procurar por tProcess com múltiplos tDataObject mas sem tDataStoreReference.
+
+
+
+2. DÍVIDA DE CONFIGURAÇÃO E AMBIENTE
+Descrição para Modeladores
+Nome da Dívida: Dívida de Portabilidade e "Vendor Lock-in" (Aprisionamento Tecnológico).
+O que é? É o uso de ferramentas que não seguem estritamente o padrão BPMN 2.0 ou o uso excessivo de recursos específicos de um único fornecedor.
+Por que é um problema? O processo se torna "prisioneiro" da ferramenta. Tentar mover o modelo para outra plataforma falha.
+Como Identificar (Visualmente):
+O modelo não pode ser importado corretamente em outra ferramenta de automação.
+O modelo usa "propriedades" na ferramenta que não têm representação visual padrão no BPMN.
+
+
+Ação Corretiva:
+Use ferramentas de modelagem conformes com o padrão BPMN 2.0.
+Evite ferramentas de desenho genéricas.
+Isole a lógica específica da plataforma em tarefas dedicadas (Script Task ou Service Task).
+
+
+Descrição Técnica
+Elementos XML Alvo: Qualquer elemento, e principalmente tExtensionElements.
+Padrão de Detecção (Lógica):
+Extensões Proprietárias: Analisar o XML em busca de namespaces que não sejam os padrões da OMG (camunda:, flowable:, etc.).
+Localização da Extensão: A dívida é maior quando atributos proprietários são usados diretamente em elementos padrão, em vez de dentro de <bpmn:extensionElements>.
+Validação de Esquema: Tentar validar o arquivo .bpmn contra o XSD oficial do BPMN 2.0.
+DI Ausente: Verificar a ausência do elemento <bpmndi:BPMNDiagram>.
+
+
+
+3. DÍVIDA DE ORGANIZAÇÃO E ATRIBUIÇÃO
+Descrição para Modeladores
+Nome da Dívida: Dívida de Responsabilidade e Atribuição (Tarefas Órfãs).
+O que é? É a modelagem de um processo usando Pools e Lanes com nomes vagos, ou Tarefas Humanas (User Task) não atribuídas a um papel.
+Por que é um problema? Gera confusão operacional, impede a alocação automática de trabalho e dilui a responsabilidade (accountability).
+Como Identificar (Visualmente):
+Lanes com nomes genéricos (ex: "Equipe").
+Tarefas Humanas fora de uma Lane.
+Um único Pool quando o processo envolve entidades externas.
+
+
+Ação Corretiva:
+Toda User Task deve estar dentro de uma Lane com o nome de um papel funcional.
+Defina formalmente os Papéis (ResourceRole) e Executores (Performer).
+Use Pools separados para cada entidade de negócio independente.
+
+
+Descrição Técnica
+Elementos XML Alvo: tUserTask, tLane, tLaneSet, tResourceRole, tPerformer, tPotentialOwner.
+Padrão de Detecção (Lógica):
+User Tasks Órfãs (sem Lane): Verificar se o id de uma tUserTask não é referenciado por nenhum flowNodeRef dentro de uma tLane.
+User Tasks sem Atribuição (sem Recurso): Iterar por tUserTask e verificar a ausência de elementos filhos como potentialOwner.
+Lanes Genéricas: Analisar o atributo name de tLane em busca de termos vagos ("Sistema", "Equipe", etc.).
+
+
+
